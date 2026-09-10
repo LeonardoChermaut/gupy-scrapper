@@ -1,0 +1,28 @@
+export const API_BASE_URL = 'https://portal.gupy.io/api/job-search/jobs';
+export const LOCAL_PROXY_PATH = '/api/jobs';
+export const JOB_BOARD_SOURCE = 'github_LeonardoChermaut';
+
+export const API_FETCH_LIMIT = 100;
+export const ITEMS_PER_PAGE = 20;
+export const SEARCH_DEBOUNCE_IN_MS = 400;
+export const MAX_DESCRIPTION_LENGTH = 180;
+
+export const URL_PARAM_KEYS = {
+  searchTerm: 'searchTerm',
+  workplaceType: 'workplaceType',
+  page: 'page',
+};
+
+export const CORS_PROXY_BUILDERS = [
+  (targetUrl) => `https://r.jina.ai/${targetUrl}`,
+  (targetUrl) => `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
+  (targetUrl) => `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+  (targetUrl) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+];
+
+export const WORKPLACE_TYPE_OPTIONS = [
+  { value: '', label: 'Todos' },
+  { value: 'remote', label: 'Remoto' },
+  { value: 'hybrid', label: 'Híbrido' },
+  { value: 'on-site', label: 'Presencial' },
+];

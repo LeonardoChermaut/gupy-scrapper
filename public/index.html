@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vagas remotas — Gupy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Vagas remotas</h1>
+      <p class="sub">
+        Busca direta na API pública do portal Gupy· Feito por:
+        <a href="https://github.com/LeonardoChermaut" target="_blank"
+          rel="noopener noreferrer">github.com/LeonardoChermaut</a>
+      </p>
+    </header>
+
+    <div class="filters" id="filters"></div>
+
+    <div class="searchbar">
+      <input type="text" id="search" placeholder="Buscar por título (jobName)..." autocomplete="off">
+    </div>
+
+    <div id="status" class="status" aria-live="polite"></div>
+    <div class="list" id="list"></div>
+    <div class="pagination" id="pagination"></div>
+
+    <footer>
+      Dados via api <a href="https://portal.gupy.io" target="_blank" rel="noopener noreferrer">portal.gupy.io</a>·
+    </footer>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
