@@ -67,7 +67,6 @@ const unwrapProxyPayload = (payload) => {
       return payload;
     }
   }
-
   return payload;
 };
 
@@ -100,6 +99,5 @@ export const extractJobsFromPayload = (payload) => {
   if (payload && Array.isArray(payload.data)) {
     return payload.data;
   }
-
   return [];
 };

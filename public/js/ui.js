@@ -92,15 +92,7 @@ const openJobModal = (index) => {
   const body = modal.querySelector('.modal-body');
   const link = modal.querySelector('.modal-link');
 
-  const companyName = job.careerPageName ?? 'Empresa não informada';
-  const workplaceLabel = getWorkplaceTypeLabel(job.workplaceType);
-  const workplaceClass = getWorkplaceTypeClass(job.workplaceType);
-
-  const locationText = job.city
-    ? `${job.city}${job.state ? ', ' + job.state : ''}`
-    : '';
-
-  const publishedDateLabel = formatPublishedDate(job.publishedDate);
+  const { companyName, workplaceLabel, workplaceClass, locationText, publishedDateLabel } = extractJobMetadata(job);
   const safeJobUrl = buildJobUrlWithSource(job.jobUrl ?? '#', JOB_BOARD_SOURCE);
   const fullDescription = formatDescription(job.description);
 
@@ -175,7 +167,6 @@ const getWorkplaceTypeLabel = (workplaceType) => {
   if (matchingOption && matchingOption.value) {
     return matchingOption.label;
   }
-
   return 'Não informado';
 };
 
@@ -194,21 +185,23 @@ const getWorkplaceTypeClass = (workplaceType) => {
   return '';
 };
 
+const extractJobMetadata = (job) => ({
+  companyName: job.careerPageName ?? 'Empresa não informada',
+  workplaceLabel: getWorkplaceTypeLabel(job.workplaceType),
+  workplaceClass: getWorkplaceTypeClass(job.workplaceType),
+  locationText: job.city
+    ? `${job.city}${job.state ? ', ' + job.state : ''}`
+    : '',
+  publishedDateLabel: formatPublishedDate(job.publishedDate),
+});
+
 const renderJobCard = (job, index) => {
   const description = stripHtml(job.description);
   const truncatedDescription = description.length > MAX_DESCRIPTION_LENGTH
     ? description.slice(0, MAX_DESCRIPTION_LENGTH) + '…'
     : description;
 
-  const companyName = job.careerPageName ?? 'Empresa não informada';
-  const workplaceLabel = getWorkplaceTypeLabel(job.workplaceType);
-  const workplaceClass = getWorkplaceTypeClass(job.workplaceType);
-
-  const locationText = job.city
-    ? `${job.city}${job.state ? ', ' + job.state : ''}`
-    : '';
-
-  const publishedDateLabel = formatPublishedDate(job.publishedDate);
+  const { companyName, workplaceLabel, workplaceClass, locationText, publishedDateLabel } = extractJobMetadata(job);
 
   return `
     <article class="card ${workplaceClass}" data-job-index="${index}" tabindex="0" role="button" aria-expanded="false">
@@ -231,6 +224,7 @@ export const renderJobs = (jobs) => {
     listElement.innerHTML = '';
     return;
   }
+
   listElement.innerHTML = jobs.map((job, index) => renderJobCard(job, index)).join('');
 
   listElement.querySelectorAll('.card[data-job-index]').forEach((card) => {

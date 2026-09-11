@@ -1,12 +1,10 @@
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
+const { UPSTREAM_HOST, UPSTREAM_PATH, buildUpstreamUrl, proxyToUpstream } = require('./proxy');
 
 const PORT = process.env.PORT ?? 3000;
-const UPSTREAM_HOST = 'portal.gupy.io';
-const UPSTREAM_PATH = '/api/job-search/jobs';
 const ROOT_DIR = path.join(__dirname, '..', 'public');
 
 const MIME_TYPES = {
@@ -42,6 +40,7 @@ const serveStatic = (requestPath, response) => {
       response.end('Arquivo não encontrado');
       return;
     }
+
     const fileExtension = path.extname(filePath).toLowerCase();
     response.writeHead(200, {
       'Content-Type': MIME_TYPES[fileExtension] ?? 'application/octet-stream',
@@ -51,50 +50,14 @@ const serveStatic = (requestPath, response) => {
   });
 };
 
-const buildUpstreamUrl = (requestUrl) => {
-  const upstreamPath = requestUrl.pathname === '/api/jobs'
-    ? UPSTREAM_PATH
-    : requestUrl.pathname;
-  return `https://${UPSTREAM_HOST}${upstreamPath}${requestUrl.search}`;
-};
-
-const proxyToGupy = (requestUrl, response) => {
-  const upstreamUrl = buildUpstreamUrl(requestUrl);
-
-  const upstreamRequest = https.request(upstreamUrl, {
-    method: 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; gupy-scrapper-local-proxy)',
-      'Accept': 'application/json',
-    },
-  }, (upstreamResponse) => {
-    response.writeHead(upstreamResponse.statusCode ?? 502, {
-      'Content-Type': upstreamResponse.headers['content-type'] ?? 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'no-store',
-    });
-    upstreamResponse.pipe(response);
-  });
-
-  upstreamRequest.on('error', (error) => {
-    response.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
-    response.end(JSON.stringify({
-      error: 'Falha ao consultar o Gupy',
-      detail: error.message,
-    }));
-  });
-
-  upstreamRequest.end();
-};
-
 const server = http.createServer((request, response) => {
   const requestUrl = new URL(request.url, `http://${request.headers.host ?? 'localhost'}`);
 
   if (requestUrl.pathname.startsWith('/api/')) {
-    proxyToGupy(requestUrl, response);
+    const upstreamUrl = buildUpstreamUrl(requestUrl);
+    proxyToUpstream(upstreamUrl, response);
     return;
   }
-
   serveStatic(decodeURIComponent(requestUrl.pathname), response);
 });
 

@@ -6,18 +6,15 @@ O projeto não usa framework nem processo de build. É HTML, CSS e JavaScript pu
 
 ## Por que precisa de um servidor?
 
-A API do Gupy (`https://portal.gupy.io/api/job-search/jobs`) não envia os cabeçalhos CORS necessários para permitir chamadas feitas diretamente pelo navegador a partir de outra origem.
-
-Até seria possível usar um proxy público, como allorigins ou corsproxy.io, mas isso traz alguns problemas: esses serviços podem ficar instáveis, mais lentos em determinados horários ou limitar a quantidade de requisições.
-
-Por isso, o projeto usa um proxy próprio no servidor. O arquivo `api/jobs.js` recebe a requisição do frontend, consulta o Gupy e devolve a resposta para a página. Como essa chamada passa pelo mesmo domínio da aplicação, o navegador não bloqueia a requisição por CORS.
-
-Esse proxy funciona tanto com `vercel dev` durante o desenvolvimento quanto em produção na Vercel.
+Este projeto resolve o problema na raiz: um servidor Node que
+**serve os arquivos estáticos** e **faz o proxy para a API do Gupy** no mesmo
+processo. Como o proxy roda na mesma origem que a página (`localhost:3000`),
+não existe bloqueio de CORS.
 
 ## Requisitos
 
-- [Node.js](https://nodejs.org/) 16 ou superior, caso queira usar o servidor local ou o CLI da Vercel.
-- Não é necessário executar `npm install`. O `api/jobs.js` usa apenas módulos nativos.
+- [Node.js](https://nodejs.org/) 16 ou superior (nenhuma dependência externa —
+  usa apenas módulos nativos).
 
 ## Como rodar
 
@@ -38,30 +35,22 @@ O script serve os arquivos de `public/` e também faz o proxy de `/api/jobs` par
 ```bash
 vercel dev
 ```
-
-Essa opção é útil para testar localmente uma estrutura mais próxima do ambiente de produção. A Vercel serve os arquivos estáticos e executa a função de `/api/jobs`.
-
-Os dois modos usam a porta `3000`. Portanto, escolha um deles por vez.
-
-## Estrutura do projeto
-
-```text
 gupy-scrapper/
-├── public/
-│   ├── index.html          # Página principal
-│   ├── css/
-│   │   └── styles.css      # Estilos
-│   └── js/
-│       ├── config.js       # URLs, limites e filtros
-│       ├── utils.js        # Funções auxiliares
-│       ├── api.js          # Requisições à API
-│       ├── ui.js           # Renderização da interface
-│       └── app.js          # Estado, eventos e fluxo da aplicação
-├── api/
-│   └── jobs.js             # Proxy para a API do Gupy
+├── server.js                 # Servidor local (estáticos + proxy)
 ├── scripts/
-│   └── local-server.js     # Servidor local
-├── vercel.json             # Configuração da Vercel
+│   ├── proxy.js              # Lógica de proxy partilhada (buildUpstreamUrl, proxyToUpstream)
+│   └── local-server.js       # Alternativa de servidor local (usa proxy.js)
+├── public/
+│   ├── index.html            # Página principal
+│   ├── css/
+│   │   └── styles.css        # Estilos
+│   └── js/
+│       ├── config.js         # Constantes (URLs, limites, filtros)
+│       ├── utils.js          # Funções auxiliares (escape, datas, etc.)
+│       ├── api.js            # Montagem de URL + fetch com fallback
+│       ├── ui.js             # Renderização do DOM
+│       └── app.js            # Estado + orquestração + eventos
+├── vercel.json               # Configuração do deploy Vercel
 └── README.md
 ```
 
@@ -84,34 +73,21 @@ Por exemplo:
 
 Com isso, é possível compartilhar uma URL mantendo a mesma busca e o mesmo filtro. O histórico do navegador também funciona de forma consistente.
 
-## Deploy na Vercel
+- Cada requisição pede `limit=100` (máximo aceito pela API).
+- A paginação é feita no frontend — as vagas são carregadas uma vez e
+  paginadas localmente (20 por página).
+- A busca por texto envia `jobName`; os chips enviam `workplaceType`.
+- Requisições em andamento são canceladas via `AbortController` quando você
+  digita rápido ou troca de filtro, evitando resposta fora de ordem.
 
-O projeto já está organizado para a Vercel. A pasta `public/` é usada para os arquivos estáticos e `api/jobs.js` é executado como Serverless Function.
+## Deploy no Vercel
 
-Para publicar:
-
-```bash
-vercel --prod
-```
-
-O `vercel.json` define `public/` como diretório de saída e desativa a detecção automática de framework.
-
-### Sobre possíveis erros em produção
-
-Dependendo de como o Gupy tratar as requisições vindas da infraestrutura da Vercel, podem ocorrer respostas `403` ou `429`. Isso pode acontecer por bloqueios ou limites aplicados ao tráfego de determinados IPs.
-
-Se aparecer um erro como:
-
-```text
-[gupy] falhou via /api/jobs - HTTP 403
-```
-
-o problema provavelmente está entre a infraestrutura da Vercel e a API do Gupy, e não no frontend.
-
-Uma alternativa nessa situação, seria mover o proxy para outra infraestrutura, como Cloudflare Workers. Essa troca pode ajudar caso o bloqueio esteja relacionado à origem das requisições.
+O `vercel.json` aponta `public/` como diretório de estáticos.
+Em produção, o frontend usa proxies CORS públicos como fallback quando o
+proxy local não está disponível.
 
 ## Alternativa: extensão de navegador
 
-Também é possível usar uma extensão de navegador que altere as políticas de CORS. O `api.js` ainda possui tentativas de fallback usando proxies públicos quando a chamada direta não funciona.
-
-Essa alternativa, porém, depende de serviços externos e pode deixar de funcionar sem aviso. Para uso normal, o proxy próprio é a opção mais previsível.
+Se por algum motivo você não puder rodar o servidor local, é possível usar uma
+extensão de "unblock CORS" no navegador. O código tenta automaticamente o
+fetch direto e cai em proxies públicos — mas o proxy local é a via confiável.
