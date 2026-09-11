@@ -37,6 +37,8 @@ vercel dev
 ```
 gupy-scrapper/
 ├── server.js                 # Servidor local (estáticos + proxy)
+├── api/
+│   └── jobs.js               # Serverless function para o Vercel (importa de scripts/proxy.js)
 ├── scripts/
 │   ├── proxy.js              # Lógica de proxy partilhada (buildUpstreamUrl, proxyToUpstream)
 │   └── local-server.js       # Alternativa de servidor local (usa proxy.js)
@@ -83,8 +85,9 @@ Com isso, é possível compartilhar uma URL mantendo a mesma busca e o mesmo fil
 ## Deploy no Vercel
 
 O `vercel.json` aponta `public/` como diretório de estáticos.
-Em produção, o frontend usa proxies CORS públicos como fallback quando o
-proxy local não está disponível.
+O `api/jobs.js` é a serverless function que o Vercel executa na rota `/api/jobs` —
+ela importa a lógica de proxy de `scripts/proxy.js`. Em produção, o frontend
+usa proxies CORS públicos como fallback quando o proxy local não está disponível.
 
 ## Alternativa: extensão de navegador
 
