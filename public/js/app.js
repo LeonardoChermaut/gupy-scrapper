@@ -16,6 +16,8 @@ import {
   renderPagination,
   renderWorkplaceTypeFilters,
   setStatusMessage,
+  initLayoutToggle,
+  getStoredColumns,
 } from './ui.js';
 
 const appState = {
@@ -228,6 +230,9 @@ const initializeApp = () => {
   appState.searchTerm = urlState.searchTerm;
   appState.workplaceType = urlState.workplaceType;
   appState.currentPage = urlState.currentPage;
+
+  const storedColumns = getStoredColumns();
+  initLayoutToggle(null);
 
   renderWorkplaceTypeFilters(appState.workplaceType, handleWorkplaceTypeSelect);
   bindSearchInput();
