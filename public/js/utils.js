@@ -6,14 +6,12 @@ export const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-
 export const stripHtml = (value) =>
   String(value ?? '')
     .replace(/&nbsp;/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-
 
 export const formatPublishedDate = (isoDate) => {
   if (!isoDate) {

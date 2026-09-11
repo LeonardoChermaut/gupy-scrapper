@@ -12,12 +12,11 @@ import {
 
 import {
   clearResults,
+  initLayoutToggle,
   renderJobs,
   renderPagination,
   renderWorkplaceTypeFilters,
-  setStatusMessage,
-  initLayoutToggle,
-  getStoredColumns,
+  setStatusMessage
 } from './ui.js';
 
 const appState = {
@@ -47,7 +46,6 @@ const readStateFromUrl = () => {
 
   const rawPage = parseInt(urlParams.get(URL_PARAM_KEYS.page) ?? '1', 10);
   const currentPage = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
-
   return { searchTerm, workplaceType, currentPage };
 };
 
@@ -171,6 +169,7 @@ const handleWorkplaceTypeSelect = (nextWorkplaceType) => {
   if (nextWorkplaceType === appState.workplaceType) {
     return;
   }
+
   appState.workplaceType = nextWorkplaceType;
   appState.currentPage = 1;
   writeStateToUrl({ shouldPushHistory: true });
@@ -194,6 +193,7 @@ const bindSearchInput = () => {
       if (nextSearchTerm === appState.searchTerm) {
         return;
       }
+
       appState.searchTerm = nextSearchTerm;
       appState.currentPage = 1;
       writeStateToUrl();
@@ -231,7 +231,6 @@ const initializeApp = () => {
   appState.workplaceType = urlState.workplaceType;
   appState.currentPage = urlState.currentPage;
 
-  const storedColumns = getStoredColumns();
   initLayoutToggle(null);
 
   renderWorkplaceTypeFilters(appState.workplaceType, handleWorkplaceTypeSelect);

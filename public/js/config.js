@@ -9,7 +9,6 @@ export const JOB_BOARD_SOURCE = 'github_LeonardoChermaut';
 export const LAYOUT_COLUMNS_KEY = 'gupy-layout-columns';
 export const API_BASE_URL = 'https://portal.gupy.io/api/job-search/jobs';
 
-
 export const URL_PARAM_KEYS = {
   searchTerm: 'searchTerm',
   workplaceType: 'workplaceType',
