@@ -1,3 +1,6 @@
+export const delay = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
 export const escapeHtml = (value) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
