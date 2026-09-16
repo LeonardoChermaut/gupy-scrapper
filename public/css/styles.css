@@ -146,6 +146,13 @@ header {
   margin: 20px 0 4px;
 }
 
+.sort-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
 .chip {
   appearance: none;
   border: 1px solid #2a2f3a;

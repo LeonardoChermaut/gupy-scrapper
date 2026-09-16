@@ -1,14 +1,17 @@
 import {
-  API_BASE_URL,
-  API_FETCH_LIMIT,
-  CORS_PROXY_BUILDERS,
-  LOCAL_PROXY_PATH,
+  API_CONFIG,
+  PAGINATION_CONFIG,
+  SORT_DEFAULTS,
 } from './config.js';
 
-export const buildApiQuery = ({ searchTerm, workplaceType }) => {
+import { delay } from './utils.js';
+
+export const buildApiQuery = ({ searchTerm, workplaceType, page, sortBy, sortOrder }) => {
   const queryParams = new URLSearchParams();
-  queryParams.set('limit', String(API_FETCH_LIMIT));
-  queryParams.set('offset', '0');
+  queryParams.set('limit', String(API_CONFIG.fetchLimit));
+  queryParams.set('page', String(page ?? 1));
+  queryParams.set('sortBy', sortBy ?? SORT_DEFAULTS.sortBy);
+  queryParams.set('sortOrder', sortOrder ?? SORT_DEFAULTS.sortOrder);
   if (searchTerm) {
     queryParams.set('jobName', searchTerm);
   }
@@ -22,19 +25,19 @@ export const buildApiQuery = ({ searchTerm, workplaceType }) => {
 
 export const buildRemoteApiUrl = (params) => {
   const queryString = buildApiQuery(params);
-  return `${API_BASE_URL}?${queryString}`;
+  return `${API_CONFIG.baseUrl}?${queryString}`;
 };
 
 export const buildLocalProxyUrl = (params) => {
   const queryString = buildApiQuery(params);
-  return `${LOCAL_PROXY_PATH}?${queryString}`;
+  return `${API_CONFIG.localProxyPath}?${queryString}`;
 };
 
 const buildAttemptUrls = (params) => {
   const remoteUrl = buildRemoteApiUrl(params);
   const attemptUrls = [buildLocalProxyUrl(params), remoteUrl];
 
-  for (const buildProxyUrl of CORS_PROXY_BUILDERS) {
+  for (const buildProxyUrl of API_CONFIG.corsProxyBuilders) {
     attemptUrls.push(buildProxyUrl(remoteUrl));
   }
 
@@ -100,4 +103,91 @@ export const extractJobsFromPayload = (payload) => {
     return payload.data;
   }
   return [];
+};
+
+export const fetchSinglePageWithRetry = async (params, signal) => {
+  let retryAttemptsRemaining = PAGINATION_CONFIG.maxRetryAttempts;
+  let lastError = null;
+
+  while (retryAttemptsRemaining > 0) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    try {
+      return await fetchJobsBatch(params, signal);
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+
+      lastError = error;
+      retryAttemptsRemaining -= 1;
+
+      if (retryAttemptsRemaining > 0) {
+        await delay(PAGINATION_CONFIG.pageRequestDelayInMs);
+      }
+    }
+  }
+
+  throw lastError ?? new Error('All retry attempts failed.');
+};
+
+export const fetchAllJobs = async ({ searchTerm, workplaceType, sortBy, sortOrder }, signal, onProgress) => {
+  const collectedJobsById = new Map();
+
+  const collectJobs = (jobs) => {
+    for (const job of jobs) {
+      if (job.id != null) {
+        collectedJobsById.set(job.id, job);
+      }
+    }
+  };
+
+  const reportProgress = () => {
+    if (onProgress) {
+      onProgress(collectedJobsById.size, totalJobCount);
+    }
+  };
+
+  const firstPagePayload = await fetchSinglePageWithRetry(
+    { searchTerm, workplaceType, page: 1, sortBy, sortOrder },
+    signal,
+  );
+
+  const totalJobCount = firstPagePayload?.pagination?.total ?? 0;
+  const firstPageJobs = extractJobsFromPayload(firstPagePayload);
+  collectJobs(firstPageJobs);
+  reportProgress();
+
+  if (firstPageJobs.length === 0) {
+    return [];
+  }
+
+  const totalPagesToFetch = Math.ceil(totalJobCount / API_CONFIG.fetchLimit);
+  const clampedTotalPages = Math.min(totalPagesToFetch, PAGINATION_CONFIG.maxPageSafetyLimit);
+
+  for (let currentPageNumber = 2; currentPageNumber <= clampedTotalPages; currentPageNumber += 1) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    await delay(PAGINATION_CONFIG.pageRequestDelayInMs);
+
+    const currentPagePayload = await fetchSinglePageWithRetry(
+      { searchTerm, workplaceType, page: currentPageNumber, sortBy, sortOrder },
+      signal,
+    );
+
+    const currentPageJobs = extractJobsFromPayload(currentPagePayload);
+
+    if (currentPageJobs.length === 0) {
+      break;
+    }
+
+    collectJobs(currentPageJobs);
+    reportProgress();
+  }
+
+  return [...collectedJobsById.values()];
 };

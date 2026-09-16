@@ -1,13 +1,12 @@
 import {
-  extractJobsFromPayload,
-  fetchJobsBatch,
+  fetchAllJobs,
 } from './api.js';
 
 import {
-  ITEMS_PER_PAGE,
-  SEARCH_DEBOUNCE_IN_MS,
+  SORT_DEFAULTS,
+  UI_CONFIG,
   URL_PARAM_KEYS,
-  WORKPLACE_TYPE_OPTIONS,
+  WORKPLACE_TYPE_OPTIONS
 } from './config.js';
 
 import {
@@ -15,6 +14,7 @@ import {
   initLayoutToggle,
   renderJobs,
   renderPagination,
+  renderSortToggle,
   renderWorkplaceTypeFilters,
   setStatusMessage
 } from './ui.js';
@@ -23,6 +23,8 @@ const appState = {
   searchTerm: '',
   workplaceType: 'remote',
   currentPage: 1,
+  sortBy: SORT_DEFAULTS.sortBy,
+  sortOrder: SORT_DEFAULTS.sortOrder,
   allJobs: [],
   isLoading: false,
 };
@@ -46,7 +48,11 @@ const readStateFromUrl = () => {
 
   const rawPage = parseInt(urlParams.get(URL_PARAM_KEYS.page) ?? '1', 10);
   const currentPage = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
-  return { searchTerm, workplaceType, currentPage };
+
+  const sortBy = urlParams.get(URL_PARAM_KEYS.sortBy) ?? SORT_DEFAULTS.sortBy;
+  const sortOrder = urlParams.get(URL_PARAM_KEYS.sortOrder) ?? SORT_DEFAULTS.sortOrder;
+
+  return { searchTerm, workplaceType, currentPage, sortBy, sortOrder };
 };
 
 const writeStateToUrl = ({ shouldPushHistory = false } = {}) => {
@@ -58,9 +64,9 @@ const writeStateToUrl = ({ shouldPushHistory = false } = {}) => {
   if (appState.workplaceType) {
     urlParams.set(URL_PARAM_KEYS.workplaceType, appState.workplaceType);
   }
-  if (appState.currentPage > 1) {
-    urlParams.set(URL_PARAM_KEYS.page, String(appState.currentPage));
-  }
+  urlParams.set(URL_PARAM_KEYS.page, String(appState.currentPage));
+  urlParams.set(URL_PARAM_KEYS.sortBy, appState.sortBy);
+  urlParams.set(URL_PARAM_KEYS.sortOrder, appState.sortOrder);
 
   const queryString = urlParams.toString();
   const nextUrl = queryString
@@ -72,11 +78,11 @@ const writeStateToUrl = ({ shouldPushHistory = false } = {}) => {
 };
 
 const getTotalPages = () =>
-  Math.max(1, Math.ceil(appState.allJobs.length / ITEMS_PER_PAGE));
+  Math.max(1, Math.ceil(appState.allJobs.length / UI_CONFIG.itemsPerPage));
 
 const getCurrentPageJobs = () => {
-  const startIndex = (appState.currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const startIndex = (appState.currentPage - 1) * UI_CONFIG.itemsPerPage;
+  const endIndex = startIndex + UI_CONFIG.itemsPerPage;
   return appState.allJobs.slice(startIndex, endIndex);
 };
 
@@ -110,11 +116,6 @@ const handlePageChange = (nextPage) => {
 };
 
 const loadJobs = async () => {
-  if (appState.isLoading) {
-    return;
-  }
-  appState.isLoading = true;
-
   if (activeAbortController) {
     activeAbortController.abort();
   }
@@ -122,23 +123,37 @@ const loadJobs = async () => {
   const currentSignal = activeAbortController.signal;
   const requestId = ++latestRequestId;
 
+  appState.isLoading = true;
   setStatusMessage('Carregando vagas...', 'loading');
   clearResults();
 
   try {
-    const payload = await fetchJobsBatch({
-      searchTerm: appState.searchTerm,
-      workplaceType: appState.workplaceType,
-    }, currentSignal);
+    const collectedJobs = await fetchAllJobs(
+      {
+        searchTerm: appState.searchTerm,
+        workplaceType: appState.workplaceType,
+        sortBy: appState.sortBy,
+        sortOrder: appState.sortOrder,
+      },
+      currentSignal,
+      (collectedJobCount, totalJobCount) => {
+        if (requestId !== latestRequestId) {
+          return;
+        }
+        setStatusMessage(
+          `Carregando vagas... ${collectedJobCount} de ${totalJobCount}`,
+          'loading',
+        );
+      },
+    );
 
     if (requestId !== latestRequestId) {
       return;
     }
 
-    const jobs = extractJobsFromPayload(payload);
-    appState.allJobs = jobs;
+    appState.allJobs = collectedJobs;
 
-    if (jobs.length === 0) {
+    if (collectedJobs.length === 0) {
       setStatusMessage('Nenhuma vaga encontrada com esses critérios.', 'empty');
       return;
     }
@@ -174,6 +189,19 @@ const handleWorkplaceTypeSelect = (nextWorkplaceType) => {
   appState.currentPage = 1;
   writeStateToUrl({ shouldPushHistory: true });
   renderWorkplaceTypeFilters(appState.workplaceType, handleWorkplaceTypeSelect);
+  renderSortToggle(appState.sortOrder, handleSortToggle);
+  loadJobs();
+};
+
+const handleSortToggle = (nextSortOrder) => {
+  if (nextSortOrder === appState.sortOrder) {
+    return;
+  }
+
+  appState.sortOrder = nextSortOrder;
+  appState.currentPage = 1;
+  writeStateToUrl({ shouldPushHistory: true });
+  renderSortToggle(appState.sortOrder, handleSortToggle);
   loadJobs();
 };
 
@@ -198,18 +226,21 @@ const bindSearchInput = () => {
       appState.currentPage = 1;
       writeStateToUrl();
       loadJobs();
-    }, SEARCH_DEBOUNCE_IN_MS);
+    }, UI_CONFIG.searchDebounceInMs);
   });
 };
 
 const handlePopState = () => {
   const urlState = readStateFromUrl();
   const didFiltersChange = urlState.searchTerm !== appState.searchTerm
-    || urlState.workplaceType !== appState.workplaceType;
+    || urlState.workplaceType !== appState.workplaceType
+    || urlState.sortOrder !== appState.sortOrder;
 
+  appState.sortBy = urlState.sortBy;
+  appState.sortOrder = urlState.sortOrder;
   appState.searchTerm = urlState.searchTerm;
-  appState.workplaceType = urlState.workplaceType;
   appState.currentPage = urlState.currentPage;
+  appState.workplaceType = urlState.workplaceType;
 
   const searchInput = document.getElementById('search');
   if (searchInput.value !== urlState.searchTerm) {
@@ -217,6 +248,7 @@ const handlePopState = () => {
   }
 
   renderWorkplaceTypeFilters(appState.workplaceType, handleWorkplaceTypeSelect);
+  renderSortToggle(appState.sortOrder, handleSortToggle);
 
   if (didFiltersChange || appState.allJobs.length === 0) {
     loadJobs();
@@ -230,10 +262,13 @@ const initializeApp = () => {
   appState.searchTerm = urlState.searchTerm;
   appState.workplaceType = urlState.workplaceType;
   appState.currentPage = urlState.currentPage;
+  appState.sortBy = urlState.sortBy;
+  appState.sortOrder = urlState.sortOrder;
 
   initLayoutToggle(null);
 
   renderWorkplaceTypeFilters(appState.workplaceType, handleWorkplaceTypeSelect);
+  renderSortToggle(appState.sortOrder, handleSortToggle);
   bindSearchInput();
   writeStateToUrl();
   loadJobs();

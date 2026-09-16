@@ -1,7 +1,7 @@
 import {
-  JOB_BOARD_SOURCE,
-  LAYOUT_COLUMNS_KEY,
-  MAX_DESCRIPTION_LENGTH,
+  API_CONFIG,
+  SORT_OPTIONS,
+  UI_CONFIG,
   WORKPLACE_TYPE_OPTIONS,
 } from './config.js';
 
@@ -93,7 +93,7 @@ const openJobModal = (index) => {
   const link = modal.querySelector('.modal-link');
 
   const { companyName, workplaceLabel, workplaceClass, locationText, publishedDateLabel } = extractJobMetadata(job);
-  const safeJobUrl = buildJobUrlWithSource(job.jobUrl ?? '#', JOB_BOARD_SOURCE);
+  const safeJobUrl = buildJobUrlWithSource(job.jobUrl ?? '#', API_CONFIG.jobBoardSource);
   const fullDescription = formatDescription(job.description);
 
   body.className = `modal-body ${workplaceClass}`;
@@ -159,6 +159,28 @@ export const renderWorkplaceTypeFilters = (activeType, onSelect) => {
     });
 };
 
+export const renderSortToggle = (activeSortOrder, onSortChange) => {
+  const sortContainer = document.getElementById('sortToggle');
+  if (!sortContainer) {
+    return;
+  }
+
+  sortContainer.innerHTML = SORT_OPTIONS.map((option) => {
+    const isActive = option.order === activeSortOrder;
+    return `<button class="chip${isActive ? ' active' : ''}" `
+      + `data-sort-order="${escapeHtml(option.order)}" type="button">`
+      + `${escapeHtml(option.label)}</button>`;
+  }).join('');
+
+  sortContainer
+    .querySelectorAll('button[data-sort-order]')
+    .forEach((buttonElement) => {
+      buttonElement.addEventListener('click', () => {
+        onSortChange(buttonElement.dataset.sortOrder);
+      });
+    });
+};
+
 const getWorkplaceTypeLabel = (workplaceType) => {
   const matchingOption = WORKPLACE_TYPE_OPTIONS.find(
     (option) => option.value === workplaceType
@@ -171,18 +193,12 @@ const getWorkplaceTypeLabel = (workplaceType) => {
 };
 
 const getWorkplaceTypeClass = (workplaceType) => {
-  if (workplaceType === 'remote') {
-    return 'card-remote';
-  }
-
-  if (workplaceType === 'hybrid') {
-    return 'card-hybrid';
-  }
-
-  if (workplaceType === 'on-site') {
-    return 'card-on-site';
-  }
-  return '';
+  const objectMap = {
+    remote: 'card-remote',
+    hybrid: 'card-hybrid',
+    'on-site': 'card-on-site'
+  };
+  return objectMap[workplaceType] || '';
 };
 
 const extractJobMetadata = (job) => ({
@@ -197,8 +213,8 @@ const extractJobMetadata = (job) => ({
 
 const renderJobCard = (job, index) => {
   const description = stripHtml(job.description);
-  const truncatedDescription = description.length > MAX_DESCRIPTION_LENGTH
-    ? description.slice(0, MAX_DESCRIPTION_LENGTH) + '…'
+  const truncatedDescription = description.length > UI_CONFIG.maxDescriptionLength
+    ? description.slice(0, UI_CONFIG.maxDescriptionLength) + '…'
     : description;
 
   const { companyName, workplaceLabel, workplaceClass, locationText, publishedDateLabel } = extractJobMetadata(job);
@@ -306,7 +322,7 @@ export const renderPagination = ({ currentPage, totalPages, onPageChange }) => {
 };
 
 export const getStoredColumns = () => {
-  const stored = localStorage.getItem(LAYOUT_COLUMNS_KEY);
+  const stored = localStorage.getItem(UI_CONFIG.layoutColumnsKey);
   if (stored === '1' || stored === '2') {
     return parseInt(stored, 10);
   }
@@ -314,7 +330,7 @@ export const getStoredColumns = () => {
 };
 
 export const setStoredColumns = (columns) =>
-  localStorage.setItem(LAYOUT_COLUMNS_KEY, String(columns));
+  localStorage.setItem(UI_CONFIG.layoutColumnsKey, String(columns));
 
 export const applyLayoutColumns = (columns) => {
   const listElement = document.getElementById('list');
