@@ -259,11 +259,11 @@ const handlePopState = () => {
 
 const initializeApp = () => {
   const urlState = readStateFromUrl();
-  appState.searchTerm = urlState.searchTerm;
-  appState.workplaceType = urlState.workplaceType;
-  appState.currentPage = urlState.currentPage;
   appState.sortBy = urlState.sortBy;
   appState.sortOrder = urlState.sortOrder;
+  appState.searchTerm = urlState.searchTerm;
+  appState.currentPage = urlState.currentPage;
+  appState.workplaceType = urlState.workplaceType;
 
   initLayoutToggle(null);
 

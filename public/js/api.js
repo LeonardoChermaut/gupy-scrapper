@@ -8,8 +8,8 @@ import { delay } from './utils.js';
 
 export const buildApiQuery = ({ searchTerm, workplaceType, page, sortBy, sortOrder }) => {
   const queryParams = new URLSearchParams();
-  queryParams.set('limit', String(API_CONFIG.fetchLimit));
   queryParams.set('page', String(page ?? 1));
+  queryParams.set('limit', String(API_CONFIG.fetchLimit));
   queryParams.set('sortBy', sortBy ?? SORT_DEFAULTS.sortBy);
   queryParams.set('sortOrder', sortOrder ?? SORT_DEFAULTS.sortOrder);
   if (searchTerm) {
@@ -169,7 +169,7 @@ export const fetchAllJobs = async ({ searchTerm, workplaceType, sortBy, sortOrde
 
   for (let currentPageNumber = 2; currentPageNumber <= clampedTotalPages; currentPageNumber += 1) {
     if (signal?.aborted) {
-      throw new DOMException('Aborted', 'AbortError');
+      throw new DOMException(`Aborted fetching page ${currentPageNumber}`, 'AbortError');
     }
 
     await delay(PAGINATION_CONFIG.pageRequestDelayInMs);
