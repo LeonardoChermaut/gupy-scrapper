@@ -122,12 +122,16 @@ const closeJobModal = () => {
 };
 
 export const setStatusMessage = (message, kind) => {
+  const statusElement = document.getElementById('status');
+  if (!statusElement) {
+    return;
+  }
+
   const statusTypes = ['loading', 'empty', 'error'];
   if (kind && !statusTypes.includes(kind)) {
     throw new Error(`Status Inválido: ${kind}. Status válidos: ${statusTypes.join(', ')}`);
   }
 
-  const statusElement = document.getElementById('status');
   statusElement.className = `status${kind ? ` ${kind}` : ''}`;
 
   if (!message) {
@@ -141,12 +145,21 @@ export const setStatusMessage = (message, kind) => {
 };
 
 export const clearResults = () => {
-  document.getElementById('list').innerHTML = '';
-  document.getElementById('pagination').innerHTML = '';
+  const listElement = document.getElementById('list');
+  if (listElement) {
+    listElement.innerHTML = '';
+  }
+  const paginationElement = document.getElementById('pagination');
+  if (paginationElement) {
+    paginationElement.innerHTML = '';
+  }
 };
 
 export const renderWorkplaceTypeFilters = (activeType, onSelect) => {
   const filtersContainer = document.getElementById('filters');
+  if (!filtersContainer) {
+    return;
+  }
 
   filtersContainer.innerHTML = WORKPLACE_TYPE_OPTIONS.map((option) => {
     const isActive = option.value === activeType;
