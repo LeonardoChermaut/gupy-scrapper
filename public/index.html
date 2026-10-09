@@ -56,7 +56,21 @@
       </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
-    <script defer src="/_vercel/insights/script.js"></script>
-  </body>
+    <div id="status" class="status" aria-live="polite"></div>
+    <div class="list" id="list"></div>
+    <div class="pagination" id="pagination"></div>
+
+    <footer>
+      Dados via api
+      <a href="https://portal.gupy.io" target="_blank" rel="noopener noreferrer">portal.gupy.io</a>·
+    </footer>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+  <script>
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+
 </html>
