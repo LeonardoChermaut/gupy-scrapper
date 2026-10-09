@@ -12,10 +12,12 @@ import {
   stripHtml,
 } from './utils.js';
 
-const ICON_COMPANY = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 1a.5.5 0 0 0-.5.5V3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 12.5 3H10V1.5a.5.5 0 0 0-.5-.5h-3zM6 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V3H6V2.5zM3.5 4a.5.5 0 0 1 .5.5V6h8V4.5a.5.5 0 0 1 .5-.5h-9zM3 7v5.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V7H3z"/></svg>';
-const ICON_TYPE = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>';
-const ICON_LOCATION = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a5 5 0 0 0-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>';
-const ICON_DATE = '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>';
+const ICONS = {
+  date: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>',
+  type: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg>',
+  company: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 1a.5.5 0 0 0-.5.5V3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h9a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 12.5 3H10V1.5a.5.5 0 0 0-.5-.5h-3zM6 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5V3H6V2.5zM3.5 4a.5.5 0 0 1 .5.5V6h8V4.5a.5.5 0 0 1 .5-.5h-9zM3 7v5.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V7H3z"/></svg>',
+  location: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1a5 5 0 0 0-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/></svg>',
+};
 
 const createModalIfNeeded = () => {
   if (document.getElementById('job-modal')) {
@@ -59,16 +61,16 @@ const renderMetaItem = (icon, text) =>
 
 const renderMeta = (companyName, workplaceLabel, locationText, publishedDateLabel) => {
   const items = [
-    renderMetaItem(ICON_COMPANY, companyName),
-    renderMetaItem(ICON_TYPE, workplaceLabel),
+    renderMetaItem(ICONS.company, companyName),
+    renderMetaItem(ICONS.type, workplaceLabel),
   ];
 
   if (locationText) {
-    items.push(renderMetaItem(ICON_LOCATION, locationText));
+    items.push(renderMetaItem(ICONS.location, locationText));
   }
 
   if (publishedDateLabel) {
-    items.push(renderMetaItem(ICON_DATE, publishedDateLabel));
+    items.push(renderMetaItem(ICONS.date, publishedDateLabel));
   }
 
   return `<div class="meta">${items.join('')}</div>`;
@@ -120,8 +122,14 @@ const closeJobModal = () => {
 };
 
 export const setStatusMessage = (message, kind) => {
+  const statusTypes = ['loading', 'empty', 'error'];
+  if (kind && !statusTypes.includes(kind)) {
+    throw new Error(`Status Inválido: ${kind}. Status válidos: ${statusTypes.join(', ')}`);
+  }
+
   const statusElement = document.getElementById('status');
-  statusElement.className = `status${kind ? ' ' + kind : ''}`;
+  statusElement.className = `status${kind ? ` ${kind}` : ''}`;
+
   if (!message) {
     statusElement.style.display = 'none';
     statusElement.textContent = '';
@@ -174,11 +182,11 @@ export const renderSortToggle = (activeSortOrder, onSortChange) => {
 
   sortContainer
     .querySelectorAll('button[data-sort-order]')
-    .forEach((buttonElement) => {
-      buttonElement.addEventListener('click', () => {
-        onSortChange(buttonElement.dataset.sortOrder);
-      });
-    });
+    .forEach((buttonElement) =>
+      buttonElement.addEventListener('click', () =>
+        onSortChange(buttonElement.dataset.sortOrder)
+      )
+    );
 };
 
 const getWorkplaceTypeLabel = (workplaceType) => {
@@ -193,12 +201,12 @@ const getWorkplaceTypeLabel = (workplaceType) => {
 };
 
 const getWorkplaceTypeClass = (workplaceType) => {
-  const objectMap = {
+  const workplaceClassMap = {
     remote: 'card-remote',
     hybrid: 'card-hybrid',
     'on-site': 'card-on-site'
   };
-  return objectMap[workplaceType] || '';
+  return workplaceClassMap[workplaceType] || '';
 };
 
 const extractJobMetadata = (job) => ({

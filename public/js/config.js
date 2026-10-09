@@ -43,9 +43,9 @@ export const WORKPLACE_TYPE_OPTIONS = [
 ];
 
 export const URL_PARAM_KEYS = {
-  searchTerm: 'searchTerm',
-  workplaceType: 'workplaceType',
   page: 'page',
   sortBy: 'sortBy',
   sortOrder: 'sortOrder',
+  searchTerm: 'searchTerm',
+  workplaceType: 'workplaceType',
 };
